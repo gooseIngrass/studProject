@@ -4,12 +4,12 @@ from settings import *
 from player import Player
 from mob import Mob
 from spell import FireSpell, FrostSpell
-from game_functions import draw_text, draw_hp_bar, active_explosions, mobs, all_sprites, mobs_row_1, mobs_row_2, spells, img_dir, screen
+from game_functions import draw_text, draw_hp_bar, active_explosions, mobs, all_sprites, mobs_row_1, mobs_row_2, spells, \
+    img_dir, screen
 
 background = pygame.image.load(path.join(img_dir, 'darkPurple.png')).convert()
 background = pygame.transform.scale(background, (480, 600))
 background_rect = background.get_rect()
-
 
 # Инициализация Pygame и создание окна
 pygame.init()
@@ -17,8 +17,8 @@ pygame.init()
 pygame.display.set_caption("FIREBALL")
 clock = pygame.time.Clock()
 
-    
-#Меню
+
+# Меню
 def show_start_screen():
     font = pygame.font.SysFont("arial", 48)
     title = font.render("FIREBALL", True, WHITE)
@@ -30,7 +30,7 @@ def show_start_screen():
         screen.blit(title, (WIDTH // 2 - title.get_width() // 2, HEIGHT // 4))
 
         pygame.draw.rect(screen, GREEN, button_rect)
-        
+
         draw_text(screen, "Начать", 28, WIDTH // 2, HEIGHT // 2 - 15)
         draw_text(screen, "Для управления кораблём используйте стрелки ← →", 20, WIDTH // 2, HEIGHT // 2 + 50)
         draw_text(screen, "Для выбора оружия используйте стрелки ↑ ↓", 20, WIDTH // 2, HEIGHT // 2 + 80)
@@ -44,7 +44,9 @@ def show_start_screen():
                     waiting = False
 
         pygame.display.flip()
-#Окончание игры
+
+
+# Окончание игры
 def show_end_screen(score, win):
     font = pygame.font.SysFont("arial", 48)
     if win:
@@ -74,18 +76,28 @@ def show_end_screen(score, win):
 
         pygame.display.flip()
 
+
 def restart_game():
-    global player
+    global player, score, game_active, mobs_spawn_allowed
+
+    # Сбрасываем всех мобов перед очисткой
+    for mob in mobs:
+        mob.reset_mob()
 
     all_sprites.empty()
     mobs.empty()
+    mobs_row_1.empty()
+    mobs_row_2.empty()
     spells.empty()
     active_explosions.empty()
 
     player = Player()
     all_sprites.add(player)
 
-    # Генерируем мобов
+    score = 0
+    game_active = True
+    mobs_spawn_allowed = True
+
     newmob(mobs_row_1, 1)
     newmob(mobs_row_2, 2)
 
@@ -106,16 +118,16 @@ newmob(mobs_row_2, 2)
 
 score = 0
 spell_index = 1
-spell_index_dict = {1:'Fire', 2:'Frost', 3:'Light'}
+spell_index_dict = {1: 'Fire', 2: 'Frost', 3: 'Light'}
 
-#Вызываем меню перед игрой
+# Вызываем меню перед игрой
 show_start_screen()
 # Основной цикл игры
 
 running = True
 while running:
     clock.tick(FPS)
-    
+
     # Обработка событий
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -129,22 +141,20 @@ while running:
                 spell_index -= 1
         elif event.type == MOB_KILLED_EVENT:
             score += 1
-            if(score >= 100):
+            if (score >= 100):
                 show_end_screen(score, 1)
                 score = 0
     # Обновление
     all_sprites.update()
     mobs.update()
     active_explosions.update()
-    
-        
-    
-    # Восполняем ряды мобов, если их убили 
+
+    # Восполняем ряды мобов, если их убили
     if not mobs_row_1:
         newmob(mobs_row_1, 1)
     if not mobs_row_2:
         newmob(mobs_row_2, 2)
-        
+
     hits_player = pygame.sprite.spritecollide(player, mobs, True, pygame.sprite.collide_circle)
     for hit in hits_player:
         player.hp -= 20
